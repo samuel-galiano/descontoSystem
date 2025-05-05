@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Calculadora de Troco e Desconto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f2f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            width: 320px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin: 0.5rem 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .resultado {
+            margin-top: 1rem;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .modal-content button {
+            background-color: #28a745;
+            width: auto;
+            padding: 8px 20px;
+        }
+
+        .modal-content button:hover {
+            background-color: #1e7e34;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        .tab-buttons button {
+            flex: 1;
+            border-radius: 0;
+            border: 1px solid #007bff;
+            background-color: #fff;
+            color: #007bff;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .tab-buttons button.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="modal" id="tutorialModal">
+        <div class="modal-content">
+            <h2>Como usar</h2>
+            <p>Use a aba "Calculadora de Troco" para saber o troco a ser devolvido.</p>
+            <p>Use a aba "Calcular Desconto" para saber quanto o cliente economizou ao pagar parcelas.</p>
+            <button onclick="fecharModal()">Entendi</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Utilitário de Vendas</h1>
+
+        <div class="tab-buttons">
+            <button class="active" onclick="trocarAba('troco', event)">Calculadora de Troco</button>
+            <button onclick="trocarAba('desconto', event)">Calcular Desconto</button>
+        </div>
+
+        <div class="tab-content active" id="aba-troco">
+            <input type="number" id="valorTotal" placeholder="Valor total (R$)" min="0" step="0.01" />
+            <input type="number" id="valorPago" placeholder="Valor pago (R$)" min="0" step="0.01" />
+            <button onclick="calcularTroco()">Calcular Troco</button>
+            <div class="resultado" id="resultadoTroco"></div>
+        </div>
+
+        <div class="tab-content" id="aba-desconto">
+            <input type="number" id="valorOriginal" placeholder="Valor original (R$)" min="0" step="0.01" />
+            <input type="number" id="valorFinal" placeholder="Valor pago por mês (R$)" min="0" step="0.01" />
+
+            <select id="parcelas">
+                <script>
+                    for (let i = 1; i <= 12; i++) {
+                        document.write(`<option value="${i}" ${i === 1 ? 'selected' : ''}>${i}x</option>`);
+                    }
+                </script>
+            </select>
+
+            <button onclick="calcularDesconto()">Calcular Desconto</button>
+            <div class="resultado" id="resultadoDesconto"></div>
+        </div>
+    </div>
+
+    <script>
+        function fecharModal() {
+            document.getElementById("tutorialModal").style.display = "none";
+        }
+
+        window.onload = function () {
+            document.getElementById("tutorialModal").style.display = "flex";
+        };
+
+        function trocarAba(aba, event) {
+            const tabs = document.querySelectorAll(".tab-content");
+            const buttons = document.querySelectorAll(".tab-buttons button");
+            tabs.forEach(tab => tab.classList.remove("active"));
+            buttons.forEach(btn => btn.classList.remove("active"));
+
+            document.getElementById("aba-" + aba).classList.add("active");
+            event.target.classList.add("active");
+        }
+
+        function calcularTroco() {
+            const total = parseFloat(document.getElementById("valorTotal").value);
+            const pago = parseFloat(document.getElementById("valorPago").value);
+            const resultado = document.getElementById("resultadoTroco");
+
+            if (isNaN(total) || isNaN(pago)) {
+                resultado.textContent = "Por favor, preencha os dois campos.";
+                resultado.style.color = "red";
+                return;
+            }
+
+            if (pago < total) {
+                resultado.textContent = "Valor pago é insuficiente.";
+                resultado.style.color = "red";
+            } else {
+                const troco = (pago - total).toFixed(2);
+                resultado.textContent = `Troco: R$ ${troco}`;
+                resultado.style.color = "green";
+            }
+        }
+
+        function calcularDesconto() {
+            const original = parseFloat(document.getElementById("valorOriginal").value);
+            const pagoPorMes = parseFloat(document.getElementById("valorFinal").value);
+            const parcelas = parseInt(document.getElementById("parcelas").value);
+            const resultado = document.getElementById("resultadoDesconto");
+
+            if (isNaN(original) || isNaN(pagoPorMes)) {
+                resultado.textContent = "Preencha os dois campos.";
+                resultado.style.color = "red";
+                return;
+            }
+
+            const valorTotalPago = pagoPorMes * parcelas;
+
+            if (valorTotalPago > original) {
+                resultado.innerHTML = `O valor total pago (${parcelas}x R$ ${pagoPorMes.toFixed(2)} = R$ ${valorTotalPago.toFixed(2)}) é maior que o valor original (R$ ${original.toFixed(2)}).`;
+                resultado.style.color = "red";
+                return;
+            }
+
+            const desconto = (original - valorTotalPago).toFixed(2);
+            const porcentagem = ((desconto / original) * 100).toFixed(2);
+
+            resultado.innerHTML = `
+        Total pago: ${parcelas}x R$ ${pagoPorMes.toFixed(2)} = R$ ${valorTotalPago.toFixed(2)}<br>
+        Desconto: R$ ${desconto} (${porcentagem}%)
+      `;
+            resultado.style.color = "green";
+        }
+    </script>
+
+</body>
+
+</html>
